@@ -14,7 +14,7 @@ type ProofOfWork struct {
 }
 
 // 16进制中，每4位对应一个数字，因此此处显示成4的倍数
-const targetBits = 24
+const targetBits = 16
 
 // 创建一个新的pow运算
 func NewProofOfWork(b *Block) *ProofOfWork {
@@ -27,6 +27,18 @@ func NewProofOfWork(b *Block) *ProofOfWork {
 	pow := &ProofOfWork{b, target}
 
 	return pow
+}
+
+func (pow *ProofOfWork) Validate() bool {
+	var hashInt big.Int
+
+	data := pow.prepareData(pow.block.Nonce)
+	hash := sha256.Sum256(data)
+	hashInt.SetBytes(hash[:])
+
+	isValid := hashInt.Cmp(pow.target) == -1
+
+	return isValid
 }
 
 //生成随机数

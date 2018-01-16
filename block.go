@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/gob"
 	"strconv"
 	"time"
 )
@@ -26,6 +27,24 @@ func (b *Block) SetHash() {
 	headers := bytes.Join([][]byte{b.PrevBlockHash, b.Data, timestamp}, []byte{})
 	hash := sha256.Sum256(headers)
 	b.Hash = hash[:]
+}
+
+func (b *Block) Serialize() ([]byte, error) {
+	var result bytes.Buffer
+	encoder := gob.NewEncoder(&result)
+
+	err := encoder.Encode(b)
+
+	return result.Bytes(), err
+}
+
+func DeserializeBlock(d []byte) (*Block, error) {
+	var block Block
+
+	decoder := gob.NewDecoder(bytes.NewReader(d))
+	err := decoder.Decode(&block)
+
+	return &block, err
 }
 
 // 在区块链的最后一个区块之后添加一个区块
