@@ -31,6 +31,8 @@ func (cli *CLI) validateArgs() {
 	}
 }
 
+// 首先,拿到最新一个区块
+// 接着,获取所有没有被包含到区块中的transaction,将他们打包进最新的区块
 func (cli *CLI) addBlock(data string) {
 	cli.bc.AddBlock(data)
 	fmt.Print("success")
@@ -43,7 +45,7 @@ func (cli *CLI) printChain() {
 		block := bci.Next()
 
 		fmt.Printf("Prev. hash: %x\n", block.PrevBlockHash)
-		fmt.Printf("Data: %s\n", block.Data)
+		fmt.Printf("Data: %s\n", block.HashTransactions())
 		fmt.Printf("Hash: %x\n", block.Hash)
 		pow := NewProofOfWork(block)
 		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))

@@ -44,7 +44,9 @@ func (bc *Blockchain) AddBlock(data string) error {
 		return nil
 	})
 
-	newBlock := NewBlock(data, lastHash)
+	// 添加新块时,需要
+	cbtx := NewCoinBaseTx("-1", data)
+	newBlock := NewBlock([]*Transaction{cbtx}, lastHash)
 
 	err = bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
@@ -73,12 +75,12 @@ func (bc *Blockchain) Iterator() *BlockchainIterator {
 }
 
 // 新建创世区块
-func NewGenesisBlock() *Block {
-	return NewBlock("Genisis Block", []byte{})
+func NewGenesisBlock(coinbase *Transaction) *Block {
+	return NewBlock([]*Transaction{coinbase}, []byte{})
 }
 
 //初始化区块链
-func NewBlockchain() *Blockchain {
+func NewBlockchain(address string) *Blockchain {
 	var tip []byte
 	// 打开dbfile
 	db, err := bolt.Open(dbFile, 0600, nil)
@@ -92,7 +94,9 @@ func NewBlockchain() *Blockchain {
 		b := tx.Bucket([]byte(blocksBucket))
 
 		if b == nil {
-			genesis := NewGenesisBlock()
+			cbtx := NewCoinBaseTx(address, "hello world!")
+			genesis := NewGenesisBlock(cbtx)
+
 			b, err := tx.CreateBucket([]byte(blocksBucket))
 
 			if err != nil {

@@ -11,7 +11,7 @@ import (
 // Block
 type Block struct {
 	Timestamp     int64
-	Data          []byte
+	Transactions  []*Transaction
 	PrevBlockHash []byte
 	Hash          []byte
 	Nonce         int
@@ -24,9 +24,22 @@ func (b *Block) SetHash() {
 	// 拿到当前的timestamp
 	timestamp := []byte(strconv.FormatInt(b.Timestamp, 10))
 	// 将当前的数据和前一个区块的hash拼在一起并计算出当前区块的哈希值
-	headers := bytes.Join([][]byte{b.PrevBlockHash, b.Data, timestamp}, []byte{})
+	headers := bytes.Join([][]byte{b.PrevBlockHash, b.HashTransactions(), timestamp}, []byte{})
 	hash := sha256.Sum256(headers)
 	b.Hash = hash[:]
+}
+
+func (b *Block) HashTransactions() []byte {
+	var txHashes [][]byte
+	var txHash [32]byte
+
+	for _, tx := range b.Transactions {
+		txHashes = append(txHashes, tx.ID)
+	}
+
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
+	return txHash[:]
 }
 
 func (b *Block) Serialize() ([]byte, error) {
@@ -48,8 +61,8 @@ func DeserializeBlock(d []byte) (*Block, error) {
 }
 
 // 在区块链的最后一个区块之后添加一个区块
-func NewBlock(data string, prevBlockHash []byte) *Block {
-	block := &Block{time.Now().Unix(), []byte(data), prevBlockHash, []byte{}, 0}
+func NewBlock(transactions []*Transaction, prevBlockHash []byte) *Block {
+	block := &Block{time.Now().Unix(), transactions, prevBlockHash, []byte{}, 0}
 	// 如果希望添加block，需要挖矿（证明自己的工作量）
 	pow := NewProofOfWork(block)
 	nonce, hash := pow.Run()
