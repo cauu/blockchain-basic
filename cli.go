@@ -39,13 +39,20 @@ func (cli *CLI) addBlock(data string) {
 }
 
 func (cli *CLI) printChain() {
-	bci := cli.bc.Iterator()
+	bc := NewBlockchain("")
+	defer bc.db.Close()
+
+	bci := bc.Iterator()
 
 	for {
 		block := bci.Next()
 
-		fmt.Printf("Prev. hash: %x\n", block.PrevBlockHash)
-		fmt.Printf("Data: %s\n", block.HashTransactions())
+		fmt.Printf("Prevhash: %x\n", block.PrevBlockHash)
+		fmt.Printf("data:\n")
+		for index, tx := range block.Transactions {
+			fmt.Printf("%d. TXIn: %s TXOut: %s", index, tx.Vin, tx.Vout)
+		}
+		fmt.Printf("\nHashed data: %s\n", block.HashTransactions())
 		fmt.Printf("Hash: %x\n", block.Hash)
 		pow := NewProofOfWork(block)
 		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))

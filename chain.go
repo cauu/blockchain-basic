@@ -2,12 +2,15 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/boltdb/bolt"
 )
 
 var dbFile = "db"
 var blocksBucket = "BlockBucket"
+
+const genesisCoinbaseData = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
 
 // type Blockchain struct {
 // 	blocks []*Block
@@ -79,8 +82,20 @@ func NewGenesisBlock(coinbase *Transaction) *Block {
 	return NewBlock([]*Transaction{coinbase}, []byte{})
 }
 
+func dbExist() bool {
+	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
+		return false
+	}
+
+	return true
+}
+
 //初始化区块链
 func NewBlockchain(address string) *Blockchain {
+	// if dbExist() {
+	// 	fmt.Println("blockchain already exist.")
+	// 	os.Exit(1)
+	// }
 	var tip []byte
 	// 打开dbfile
 	db, err := bolt.Open(dbFile, 0600, nil)
@@ -94,7 +109,7 @@ func NewBlockchain(address string) *Blockchain {
 		b := tx.Bucket([]byte(blocksBucket))
 
 		if b == nil {
-			cbtx := NewCoinBaseTx(address, "hello world!")
+			cbtx := NewCoinBaseTx(address, genesisCoinbaseData)
 			genesis := NewGenesisBlock(cbtx)
 
 			b, err := tx.CreateBucket([]byte(blocksBucket))
