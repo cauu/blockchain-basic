@@ -64,6 +64,19 @@ func (cli *CLI) printChain() {
 	}
 }
 
+func (cli *CLI) getBalance(address string) {
+	bc := NewBlockchain(address)
+	defer bc.db.Close()
+
+	balance := 0
+	UTXOs := bc.FIndUTXO(address)
+	for _, out := range UTXOs {
+		balance += out.Value
+	}
+
+	fmt.Printf("Balance of '%s': %d\n", address, balance)
+}
+
 func (cli *CLI) Run() {
 	cli.validateArgs()
 
@@ -80,13 +93,17 @@ func (cli *CLI) Run() {
 	// 其中第一个参数是命令名，第二个参数是errorHandling Function
 	addBlockCmd := flag.NewFlagSet("addblock", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
+	getBalanceCmd := flag.NewFlagSet("getbalance", flag.ExitOnError)
 	addBlockData := addBlockCmd.String("data", "", "Block data")
+	getBalanceData := getBalanceCmd.String("address", "", "Wallet address")
 
 	switch os.Args[1] {
 	case "addblock":
 		err = addBlockCmd.Parse(os.Args[2:])
 	case "printchain":
 		err = printChainCmd.Parse(os.Args[2:])
+	case "getbalance":
+		err = getBalanceCmd.Parse(os.Args[2:])
 	default:
 		cli.printUsage()
 		os.Exit(1)
@@ -103,5 +120,9 @@ func (cli *CLI) Run() {
 
 	if printChainCmd.Parsed() {
 		cli.printChain()
+	}
+
+	if getBalanceCmd.Parsed() {
+		cli.getBalance()
 	}
 }

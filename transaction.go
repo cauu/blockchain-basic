@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/gob"
-	"encoding/hex"
 	"fmt"
 	"log"
 )
@@ -46,51 +45,8 @@ func (out *TXOutput) CanBeUnlockedWith(unlockingData string) bool {
 	return out.ScriptPubKey == unlockingData
 }
 
-// 找到所有的未被任何input引用的output transactions
-func (bc *Blockchain) FindUnspentTransactions(address string) []Transaction {
-	var unspentTXs []Transaction
-	spentTXOs := make(map[string][]int)
-	bci := bc.Iterator()
-
-	for {
-		block := bci.Next()
-
-		for _, tx := range block.Transactions {
-			txID := hex.EncodeToString(tx.ID)
-
-			// 遍历所有output transactions，找到没被消耗的output
-		Outputs:
-			for outIdx, out := range tx.Vout {
-				if spentTXOs[txID] != nil {
-					for _, spentOut := range spentTXOs[txID] {
-						if spentOut == outIdx {
-							continue Outputs
-						}
-					}
-				}
-
-				if out.CanBeUnlockedWith(address) {
-					unspentTXs = append(unspentTXs, *tx)
-				}
-			}
-
-			// 找到所有被消耗的output
-			if tx.IsCoinbase() == false {
-				for _, in := range tx.Vin {
-					if in.CanUnlockOutputWith(address) {
-						inTxID := hex.EncodeToString(in.Txid)
-						spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Vout)
-					}
-				}
-			}
-		}
-
-		if len(block.PrevBlockHash) == 0 {
-			break
-		}
-	}
-
-	return unspentTXs
+func (tx Transaction) IsCoinbase() bool {
+	return len(tx.Vin) == 1 && len(tx.Vin[0].Txid) == 0 && tx.Vin[0].Vout == -1
 }
 
 // Serialize returns a serialized Transaction
